@@ -1,3 +1,4 @@
+
 name: Build Android APK
 
 on:
@@ -16,14 +17,24 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
+      # 使用 GitHub Runner 预装的 Android SDK
+      - name: Setup Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
+      # 安装 Android 35 和 Build Tools
       - name: Install Android SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
+      # 构建 APK
       - name: Build APK
         run: gradle assembleDebug
 
+      # 上传 APK
       - uses: actions/upload-artifact@v4
         with:
           name: ai-learning-planner-apk
