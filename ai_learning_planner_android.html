@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#172554">
+<title>AI 转型学习助手</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#172033;--muted:#687386;--line:#e6eaf1;--blue:#3157d5;--blue2:#eaf0ff;--green:#16865b;--orange:#b76a16}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+header{background:linear-gradient(135deg,#172554,#3157d5);color:white;padding:24px 18px 22px;border-radius:0 0 24px 24px}
+header .eyebrow{font-size:12px;opacity:.8;letter-spacing:1px}h1{font-size:23px;margin:8px 0 6px}header p{font-size:13px;line-height:1.6;margin:0;color:#e2e9ff}
+.wrap{max-width:760px;margin:auto;padding:14px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:-3px}.metric{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 10px}.metric b{display:block;font-size:19px}.metric span{font-size:11px;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;background:#e9edf5;padding:5px;border-radius:13px;margin:16px 0}.tab{border:0;background:transparent;padding:10px 4px;border-radius:9px;color:#596477;font-size:14px;font-weight:600}.tab.active{background:#fff;color:var(--blue);box-shadow:0 2px 7px #17255412}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin:11px 0;box-shadow:0 3px 12px #1b2b4d08}.card h2{font-size:17px;margin:0 0 8px}.card h3{font-size:14px;margin:14px 0 7px}.muted{color:var(--muted);font-size:12px;line-height:1.6}.pill{display:inline-block;background:var(--blue2);color:var(--blue);font-size:11px;padding:4px 8px;border-radius:20px;margin:2px 4px 2px 0}.progress{height:8px;background:#edf0f5;border-radius:20px;overflow:hidden;margin:10px 0}.progress>i{display:block;height:100%;background:var(--green);width:0%;border-radius:20px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:9px 12px;font-size:13px}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}select,input[type=date]{border:1px solid var(--line);background:white;border-radius:10px;padding:9px;font-size:13px;color:var(--ink);max-width:100%}
+.task{display:flex;gap:10px;padding:11px 0;border-top:1px solid var(--line);align-items:flex-start}.task input{width:19px;height:19px;margin:1px 0 0;accent-color:var(--green);flex-shrink:0}.task strong{font-size:14px}.task p{font-size:12px;color:var(--muted);margin:4px 0 0;line-height:1.55}.task.done strong{text-decoration:line-through;color:#8b95a5}
+.daybox{border:1px solid var(--line);border-radius:12px;padding:11px;margin:8px 0}.daybox.today{border-color:#8da6ff;background:#f7f9ff}.daybox .task{border:0;padding:7px 0}
+.monthgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.month{background:#f8f9fc;border:1px solid var(--line);border-radius:12px;padding:11px}.month b{font-size:13px}.month p{font-size:11px;color:var(--muted);line-height:1.5;margin:6px 0}
+footer{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:11px}
+.note{background:#fff8eb;border:1px solid #f3dfbd;border-radius:12px;padding:11px;color:#80531c;font-size:12px;line-height:1.6}
+.hidden{display:none!important}
+.backup{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+@media(min-width:620px){.wrap{padding:20px}.monthgrid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">YOUR 9-MONTH ROADMAP</div><h1>AI 转型学习助手</h1><p>每天 30 分钟，周末集中实战。把学习拆成小任务，逐步完成 AI Agent + 空间智能项目。</p></header>
+<div class="wrap">
+ <section class="summary">
+  <div class="metric"><b id="doneCount">0</b><span>已完成任务</span></div>
+  <div class="metric"><b id="allCount">252</b><span>计划任务</span></div>
+  <div class="metric"><b id="percent">0%</b><span>整体进度</span></div>
+ </section>
+ <nav class="tabs">
+  <button class="tab active" data-tab="today">今日学习</button>
+  <button class="tab" data-tab="week">每周计划</button>
+  <button class="tab" data-tab="month">每月路线</button>
+ </nav>
+ <main id="todayView"></main>
+ <main id="weekView" class="hidden"></main>
+ <main id="monthView" class="hidden"></main>
+ <div class="note">使用提示：勾选状态保存在当前设备。可定期导出进度备份，换手机后再导入恢复。</div>
+ <div class="backup"><button class="btn" onclick="exportProgress()">导出进度备份</button><button class="btn" onclick="document.getElementById('importFile').click()">导入进度备份</button><input id="importFile" type="file" accept="application/json,.json" hidden onchange="importProgress(this)"></div>
+</div>
+<footer>AI 转型学习助手 · 建议每周日复盘一次</footer>
+<script>
+const start = new Date(2026,10,16,12);
+const phases = [
+ {month:"第 1 月",name:"Python 基础",goal:"能独立用 Python 处理业务数据、JSON 和 HTTP 请求。",weeks:[
+  ["Python 环境与变量","安装 Python 3、配置 VS Code；理解变量、数字、字符串、布尔值。","建立项目目录；编写装备名称、价格、高度变量并打印。","能运行 .py 文件，理解变量与基本类型。"],
+  ["列表、字典与流程控制","掌握 list、dict、if、for、while。","创建装备列表；按价格筛选装备；统计数量与总价。","能遍历和筛选一组装备数据。"],
+  ["函数与面向对象","掌握函数参数/返回值、类、对象、构造方法。","实现 Equipment 类；编写筛选、统计函数；拆分重复逻辑。","能把业务逻辑封装成函数和类。"],
+  ["文件、JSON 与异常","掌握模块导入、文件读写、JSON、异常处理、类型注解。","读取 devices.json；校验字段；捕获错误；导出统计结果。","完成命令行装备数据管理小程序。"]
+ ]},
+ {month:"第 2 月",name:"FastAPI 与数据库",goal:"独立开发带数据库、校验、测试的 Python 后端 API。",weeks:[
+  ["FastAPI 入门","安装 FastAPI；理解 GET/POST、路径参数、查询参数、Pydantic。","创建设备列表、设备详情、新增设备接口；用 Swagger 测试。","接口可通过 /docs 调用。"],
+  ["FastAPI 工程结构","学习 APIRouter、依赖注入、中间件、异常处理、响应模型。","拆分 routers、schemas、services；统一响应和错误处理。","形成清晰的分层项目结构。"],
+  ["SQL 与 ORM","学习 SQL 查询、表结构、SQLAlchemy、数据库 CRUD。","创建 Device 表；实现新增、查询、修改、删除。","数据可以持久化保存。"],
+  ["后端工程基础","学习配置管理、日志、pytest、JWT 基础、文件上传。","增加环境变量、请求日志、接口测试和 JSON 文件上传。","完成可测试的装备管理 API。"]
+ ]},
+ {month:"第 3 月",name:"大模型 API 应用",goal:"做出一个支持多轮对话、流式输出的 AI 应用。",weeks:[
+  ["大模型 API 与 Prompt","理解模型 API、消息角色、system/user/assistant、温度参数。","用 Python 调用模型；写一个装备方案分析 Prompt。","AI 能根据输入生成结构化分析。"],
+  ["多轮对话与上下文","理解上下文窗口、历史消息、会话 ID、Token。","为每个会话保存历史；实现清空历史和上下文长度控制。","能连续追问且区分不同会话。"],
+  ["SSE 流式输出","理解 HTTP Streaming、SSE、前后端流式消费。","FastAPI 提供流式接口；Vue 页面逐字显示模型输出。","前端能实时看到生成内容。"],
+  ["AI 应用可靠性","学习超时、重试、限流、错误处理、Token 与费用记录。","增加请求超时、异常提示、调用日志和 Token 统计。","完成稳定的 AI 对话小应用。"]
+ ]},
+ {month:"第 4 月",name:"Function Calling 与工具调用",goal:"让模型根据用户意图选择并调用真实业务函数。",weeks:[
+  ["工具调用基础","理解 Function Calling、工具描述、参数 Schema。","定义 query_devices 工具，模型返回工具名和参数。","模型能正确选择查询工具。"],
+  ["参数解析与校验","学习 JSON Schema、Pydantic 参数校验、边界检查。","定义价格范围、区域、设备类型参数；处理缺失和非法值。","工具参数可验证且有明确错误提示。"],
+  ["执行与结果回传","理解工具调用闭环：模型请求、后端执行、结果回传。","执行真实设备查询函数，把查询结果交回模型总结。","模型回答基于工具真实返回值。"],
+  ["多工具组合","学习工具注册、路由、权限与调用日志。","实现设备查询、价格统计、坐标转换三个工具。","完成装备业务工具助手。"]
+ ]},
+ {month:"第 5 月",name:"RAG 知识库",goal:"实现文档导入、切片、向量检索和带依据的问答。",weeks:[
+  ["文档解析与切片","学习 PDF/TXT 解析、文本清洗、Chunk、Metadata。","上传设备说明文档；提取文本并按长度切片。","可查看文档切片及来源信息。"],
+  ["Embedding 与向量库","理解 Embedding、向量相似度、向量数据库。","生成文本向量并写入向量库；保存文档 ID 和页码。","能够完成向量写入与查询。"],
+  ["检索与问答","学习 Top-K、相似度阈值、上下文拼接。","输入问题，检索相关片段并交给模型回答。","答案能引用检索到的片段。"],
+  ["RAG 质量优化","学习混合检索、重排、拒答、检索评估。","准备 10 个测试问题；检查命中率、错误引用和无答案情况。","形成可演示的文档知识库问答。"]
+ ]},
+ {month:"第 6 月",name:"LangGraph 与 Agent",goal:"搭建有状态、可分支、可恢复的多步骤 Agent 工作流。",weeks:[
+  ["LangGraph 基础","理解 State、Node、Edge、START、END。","搭建输入解析→工具执行→结果总结的简单图。","工作流能按节点顺序运行。"],
+  ["条件路由与工具节点","学习条件边、工具节点、循环与终止条件。","按问题类型路由到设备查询、知识库检索或闲聊节点。","Agent 能选择不同执行路径。"],
+  ["状态持久化与人工确认","学习 Checkpoint、会话状态、Human-in-the-loop。","保存任务状态；对有风险的操作增加人工确认节点。","中断后可以恢复任务。"],
+  ["Agent 可靠性","学习重试、超时、日志、评估与轨迹追踪。","为工具增加失败重试和日志；记录每一步输入输出。","完成可追踪的业务 Agent。"]
+ ]},
+ {month:"第 7 月",name:"AI + Cesium 空间智能",goal:"让 Agent 调用 GIS/空间分析工具，并在 Cesium 中展示结果。",weeks:[
+  ["前后端与 Cesium 联通","复习 Vue、Cesium、FastAPI 通信与数据格式。","Vue 页面调用 FastAPI；展示 AI 返回的结构化点位。","地图能显示后端返回的点。"],
+  ["自然语言转地图操作","学习意图解析、经纬度参数、地图命令白名单。","实现定位、缩放、绘制缓冲区等地图工具。","自然语言可触发地图操作。"],
+  ["GIS 空间查询","学习 GeoJSON、坐标系、距离、缓冲区、空间相交。","实现点位范围查询和缓冲区分析 API。","空间分析结果可在地图显示。"],
+  ["Agent 调用空间工具","组合 LangGraph、GIS API、Cesium 展示。","用户提出区域分析任务；Agent 调用工具并生成结果报告。","完成 AI 空间分析助手 Demo。"]
+ ]},
+ {month:"第 8 月",name:"工程化与部署",goal:"把 Demo 整理成可运行、可测试、可部署的项目。",weeks:[
+  ["Docker 基础","学习镜像、容器、Dockerfile、Compose。","容器化 FastAPI 服务和前端。","能通过 Compose 启动项目。"],
+  ["异步任务与缓存","理解 Redis、任务状态、后台任务和缓存。","实现长任务状态查询和结果缓存。","页面能查看任务进度。"],
+  ["安全与可观测性","学习密钥管理、权限、日志、异常、调用成本。","增加 API 鉴权、脱敏日志、调用耗时和 Token 统计。","关键操作可追踪。"],
+  ["测试与部署","学习接口测试、部署配置、备份和 README。","编写启动说明、环境变量模板和基础测试。","他人按文档可以启动项目。"]
+ ]},
+ {month:"第 9 月",name:"项目完善与求职",goal:"形成可展示的作品、简历项目描述和面试表达。",weeks:[
+  ["项目整理","整理架构、模块边界、流程图和关键技术决策。","完善 README、架构图、功能截图和演示数据。","项目能在 5 分钟内讲清楚。"],
+  ["Agent 面试准备","复习 RAG、工具调用、Agent 工作流、状态管理。","整理 20 个问题；为每个问题写出项目中的真实例子。","能解释设计取舍和失败处理。"],
+  ["Python 与后端面试","复习 Python、FastAPI、SQL、HTTP、异步和 Docker。","完成基础题；模拟解释接口、数据库和部署。","能独立讲清后端实现。"],
+  ["简历与投递","研究岗位要求、简历表达、项目演示和面试复盘。","完成简历；筛选岗位；每次面试后记录差距。","开始有节奏地投递与迭代。"]
+ ]}
+];
+const days = ["周一","周二","周三","周四","周五","周六","周日"];
+const time = ["30 分钟","30 分钟","30 分钟","30 分钟","30 分钟","1.5～2 小时","30～60 分钟"];
+const action = [
+ ["学习概念，阅读官方文档。","写一个最小可运行示例。"],
+ ["跟着示例理解代码运行过程。","自己敲一遍，不直接复制。"],
+ ["脱离教程独立实现。","完成一个小功能并打印/测试结果。"],
+ ["把知识点接入本周小项目。","修改项目代码，完成集成。"],
+ ["测试、排查错误、整理笔记。","记录问题、原因和解决方式。"],
+ ["集中开发本周实战项目。","完成可运行功能并提交 Git。"],
+ ["复盘本周内容。","重写关键代码，列出下周任务。"]
+];
+function weekIndex(date){return Math.max(0,Math.floor((date-start)/604800000));}
+function weekDates(w){let a=new Date(start);a.setDate(a.getDate()+w*7);return a;}
+function fmt(d){return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;}
+function weekData(w){let phase=Math.floor(w/4), wi=w%4;return {phase,wi,phaseData:phases[phase],data:phases[phase].weeks[wi]};}
+function taskId(w,d){return `w${w}d${d}`;}
+let progress=JSON.parse(localStorage.getItem("aiPlanProgress")||"{}");
+function isDone(id){return !!progress[id]}
+function save(){localStorage.setItem("aiPlanProgress",JSON.stringify(progress));renderAll()}
+function setDone(id,v){progress[id]=v;save()}
+function totals(){let n=0;Object.values(progress).forEach(v=>{if(v)n++});return {done:n,total:252}}
+function taskText(w,d){let x=weekData(w), topic=x.data[0], deliver=x.data[2];let details=[
+ `学习「${topic}」的核心概念，阅读文档并记录 3 个关键词。`,
+ `围绕「${topic}」写一个最小示例，确保能运行并理解输入输出。`,
+ `不看教程独立完成一个小练习，至少处理一个边界情况。`,
+ `把「${topic}」接入本周项目，打通一个真实使用场景。`,
+ `测试本周代码，修复问题，整理一页学习笔记。`,
+ `集中完成本周实战：${deliver}`,
+ `复盘本周内容，重写关键代码，列出未掌握问题。`
+];return details[d]}
+function renderStats(){let t=totals();document.getElementById("doneCount").textContent=t.done;document.getElementById("allCount").textContent=t.total;document.getElementById("percent").textContent=Math.round(t.done/t.total*100)+"%"}
+function renderToday(){
+ let actual=new Date();let now=actual<start?new Date(start):actual;let w=weekIndex(now)%36;let monday=weekDates(w);let day=(now.getDay()+6)%7;let x=weekData(w);let title=`第 ${w+1} 周 · ${x.data[0]}`;
+ let html=`<div class="card"><div class="row"><span class="pill">${x.phaseData.month} · ${x.phaseData.name}</span><span class="muted">${fmt(now)}</span></div><h2>${title}</h2><p class="muted">${x.phaseData.goal}</p><div class="progress"><i style="width:${weekProgress(w)}%"></i></div><div class="muted">本周完成 ${weekDone(w)}/7 项</div></div>`;
+ html+=`<div class="card"><div class="row"><h2>今天要做什么</h2><span class="pill">${days[day]} · ${time[day]}</span></div><h3>学习内容</h3><p>${taskText(w,day)}</p><h3>具体代码任务</h3><p>${action[day][1]}</p><h3>本周项目关联</h3><p class="muted">${x.data[2]}</p><div class="task ${isDone(taskId(w,day))?'done':''}"><input type="checkbox" ${isDone(taskId(w,day))?'checked':''} onchange="setDone('${taskId(w,day)}',this.checked)"><div><strong>标记今天已完成</strong><p>完成后会自动更新周进度和总进度。</p></div></div></div>`;
+ html+=`<div class="card"><h2>今天的完成标准</h2><p class="muted">${x.data[3]}</p><div class="row"><button class="btn" onclick="switchTab('week')">查看本周完整安排</button><button class="btn primary" onclick="switchTab('month')">查看月度路线</button></div></div>`;
+ if(actual<start) html=`<div class="note">计划将于 2026 年 11 月 16 日（周一）开始。当前先展示第一天的学习任务，你可以提前预习。</div>`+html;document.getElementById("todayView").innerHTML=html;
+}
+function exportProgress(){const blob=new Blob([JSON.stringify({app:"ai_learning_planner",version:1,exportedAt:new Date().toISOString(),progress},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ai-learning-progress.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function importProgress(input){const file=input.files&&input.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);const next=data.progress;if(!next||typeof next!=="object"||Array.isArray(next))throw new Error("格式不正确");progress={...progress,...next};save();alert("进度已导入")}catch(e){alert("导入失败：请选择有效的学习进度备份文件") }finally{input.value=""}};reader.readAsText(file)}
+function weekDone(w){let n=0;for(let d=0;d<7;d++)if(isDone(taskId(w,d)))n++;return n}
+function weekProgress(w){return Math.round(weekDone(w)/7*100)}
+function renderWeek(){
+ let html=`<div class="card"><div class="row"><h2>每周学习计划</h2><select id="weekSelect" onchange="renderSelectedWeek(this.value)">${Array.from({length:36},(_,i)=>`<option value="${i}">第 ${i+1} 周</option>`).join("")}</select></div><p class="muted">固定节奏：工作日每天 30 分钟，周末集中完成实战与复盘。</p></div><div id="weekDetail"></div>`;
+ document.getElementById("weekView").innerHTML=html;
+ let current=Math.max(0,Math.min(35,weekIndex(new Date())));document.getElementById("weekSelect").value=current;renderSelectedWeek(current);
+}
+function renderSelectedWeek(w){
+ w=Number(w);let x=weekData(w), startDate=weekDates(w), endDate=new Date(startDate);endDate.setDate(endDate.getDate()+6);
+ let html=`<div class="card"><span class="pill">${x.phaseData.month} · ${x.phaseData.name}</span><h2>第 ${w+1} 周：${x.data[0]}</h2><p class="muted">${fmt(startDate)} — ${fmt(endDate)}</p><p>${x.data[1]}</p><div class="progress"><i style="width:${weekProgress(w)}%"></i></div><b>${weekDone(w)}/7 完成</b><h3>本周实战成果</h3><p>${x.data[2]}</p><h3>验收标准</h3><p class="muted">${x.data[3]}</p></div>`;
+ for(let d=0;d<7;d++){let dt=new Date(startDate);dt.setDate(dt.getDate()+d);let id=taskId(w,d);html+=`<div class="daybox"><div class="row"><b>${days[d]} · ${fmt(dt)}</b><span class="pill">${time[d]}</span></div><div class="task ${isDone(id)?'done':''}"><input type="checkbox" ${isDone(id)?'checked':''} onchange="setDone('${id}',this.checked)"><div><strong>${taskText(w,d)}</strong><p>代码任务：${action[d][1]}</p></div></div></div>`}
+ document.getElementById("weekDetail").innerHTML=html;
+}
+function renderMonth(){
+ let html=`<div class="card"><h2>9 个月转型路线</h2><p class="muted">每个月 4 周。按顺序推进，不要求提前学完；工作忙时允许延长周期。</p><div class="progress"><i style="width:${Math.round(totals().done/252*100)}%"></i></div><p class="muted">当前整体完成 ${totals().done}/252 个日任务</p></div><div class="monthgrid">`;
+ phases.forEach((p,i)=>{let first=i*4, n=0;for(let w=first;w<first+4;w++)n+=weekDone(w);html+=`<div class="month"><b>${p.month}</b><p><strong>${p.name}</strong></p><p>${p.goal}</p><span class="pill">${n}/28 项</span><button class="btn" style="margin-top:8px;width:100%" onclick="goWeek(${first})">查看周计划</button></div>`});
+ html+=`</div><div class="card"><h2>阶段成果检查点</h2><p class="muted">第 1 月：Python 数据处理小程序<br>第 2 月：FastAPI + 数据库装备管理 API<br>第 3 月：多轮流式 AI 对话<br>第 4 月：可调用业务函数的 AI 助手<br>第 5 月：带引用依据的 RAG 知识库<br>第 6 月：有状态的 LangGraph Agent<br>第 7 月：AI + Cesium 空间分析 Demo<br>第 8 月：Docker 部署与工程化<br>第 9 月：作品集、简历和面试准备</p></div>`;
+ document.getElementById("monthView").innerHTML=html;
+}
+function goWeek(w){switchTab("week");document.getElementById("weekSelect").value=w;renderSelectedWeek(w)}
+function switchTab(tab){document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));["today","week","month"].forEach(t=>document.getElementById(t+"View").classList.toggle("hidden",t!==tab))}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+function renderAll(){renderStats();renderToday();renderWeek();renderMonth()}
+renderAll();
+</script>
+</body></html>
